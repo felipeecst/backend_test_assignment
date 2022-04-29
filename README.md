@@ -120,7 +120,7 @@ the response from API should be:
     },
     "model": "Arna",
     "price": 39938,
-    "rank_score": 0.4552,
+    "rank_score": null,
     "label": "perfect_match"
   },
   {
@@ -307,7 +307,7 @@ the response from API should be:
     },
     "model": "M37",
     "price": 5698,
-    "rank_score": 0.2183,
+    "rank_score": null,
     "label": null
   }
 ]
