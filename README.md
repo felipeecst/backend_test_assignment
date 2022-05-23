@@ -40,10 +40,15 @@ You need to build API endpoint that will accept the following parameters:
 
 The API endpoint should return paginated cars list filtered by params passed with the following rules:
 
-1. On top it should be cars with `perfect_match` label. This cars have match with user preferred car brands ( `user.preferred_brands.include?(car.brand) == true`) and with preferred price (`user.preferred_price_range.include?(car.price) == true`).
-2. Then we should have `good_match` offers. These offers have the only user preferred car brands (`user.preferred_brands.include?(car.brand) == true`).
-3. Then goes top 5 cars suggested by external recommendation service API (they can also be matched as perfect and good matches).
-4. Then goes all other cars sorted by price (ASC).
+1. Each car should have one of the label:
+   * `perfect_match` - cars matched with user preferred car brands ( `user.preferred_brands.include?(car.brand) == true`) and with preferred price (`user.preferred_price_range.include?(car.price) == true`).
+   * `good_match` - cars matched only user preferred car brands (`user.preferred_brands.include?(car.brand) == true`).
+   * `null` - in other cases
+2. Each car should have the `rank_score` field with value from AI service or `null` if there is no data.
+3. Cars should be sorted by:
+   * `label` (`perfect_match`, `good_match`, `null`)
+   * `rank_score` (DESC)
+   * `price` (ASC)
 
 Schema of response:
 ```
@@ -69,14 +74,13 @@ Suppose that the user has preferred brands as `Alfa Romeo` and `Volkswagen` and 
 ```
 [
   { "car_id": 179, "rank_score": 0.945 },
-  { "car_id": 5, "rank_score": 0.4552 },
-  { "car_id": 180, "rank_score": 0.567 },
-  { "car_id": 97, "rank_score": 0.9489 },
-  { "car_id": 86, "rank_score": 0.2183 },
-  { "car_id": 32, "rank_score": 0.0967 },
+  { "car_id": 5,   "rank_score": 0.4552 },
+  { "car_id": 13,  "rank_score": 0.567 },
+  { "car_id": 97,  "rank_score": 0.9489 },
+  { "car_id": 32,  "rank_score": 0.0967 },
   { "car_id": 176, "rank_score": 0.0353 },
   { "car_id": 177, "rank_score": 0.1657 },
-  { "car_id": 186, "rank_score": 0.7068 },
+  { "car_id": 36,  "rank_score": 0.7068 },
   { "car_id": 103, "rank_score": 0.4729 }
 ]
 ```
@@ -102,17 +106,6 @@ the response from API should be:
     "label": "perfect_match"
   },
   {
-    "id": 180,
-    "brand": {
-      "id": 39,
-      "name": "Volkswagen"
-    },
-    "model": "e-Golf",
-    "price": 35131,
-    "rank_score": 0.567,
-    "label": "perfect_match"
-  },
-  {
     "id": 5,
     "brand": {
       "id": 2,
@@ -120,19 +113,19 @@ the response from API should be:
     },
     "model": "Arna",
     "price": 39938,
-    "rank_score": null,
+    "rank_score": 0.4552,
     "label": "perfect_match"
   },
   {
-    "id": 186,
+    "id": 180,
     "brand": {
-      "id": 2,
-      "name": "Alfa Romeo"
+      "id": 39,
+      "name": "Volkswagen"
     },
-    "model": "Brera",
-    "price": 40938,
-    "rank_score": 0.7068,
-    "label": "good_match"
+    "model": "e-Golf",
+    "price": 35131,
+    "rank_score": null,
+    "label": "perfect_match"
   },
   {
     "id": 181,
@@ -142,6 +135,17 @@ the response from API should be:
     },
     "model": "Amarok",
     "price": 31743,
+    "rank_score": null,
+    "label": "good_match"
+  },
+  {
+    "id": 186,
+    "brand": {
+      "id": 2,
+      "name": "Alfa Romeo"
+    },
+    "model": "Brera",
+    "price": 40938,
     "rank_score": null,
     "label": "good_match"
   },
@@ -157,6 +161,28 @@ the response from API should be:
     "label": null
   },
   {
+    "id": 36,
+    "brand": {
+      "id": 6,
+      "name": "Buick"
+    },
+    "model": "GL 8",
+    "price": 86657,
+    "rank_score": 0.7068,
+    "label": null
+  },
+  {
+    "id": 13,
+    "brand": {
+      "id": 3,
+      "name": "Audi"
+    },
+    "model": "90",
+    "price": 56959,
+    "rank_score": 0.567,
+    "label": null
+  },
+  {
     "id": 103,
     "brand": {
       "id": 22,
@@ -165,6 +191,39 @@ the response from API should be:
     "model": "Eclat",
     "price": 48953,
     "rank_score": 0.4729,
+    "label": null
+  },
+  {
+    "id": 177,
+    "brand": {
+      "id": 38,
+      "name": "Toyota"
+    },
+    "model": "Allion",
+    "price": 40687,
+    "rank_score": 0.1657,
+    "label": null
+  },
+  {
+    "id": 32,
+    "brand": {
+      "id": 6,
+      "name": "Buick"
+    },
+    "model": "Verano",
+    "price": 21739,
+    "rank_score": 0.0967,
+    "label": null
+  },
+  {
+    "id": 176,
+    "brand": {
+      "id": 37,
+      "name": "Suzuki"
+    },
+    "model": "Kizashi",
+    "price": 40181,
+    "rank_score": 0.0353,
     "label": null
   },
   {
@@ -252,61 +311,6 @@ the response from API should be:
     },
     "model": "Forfour",
     "price": 4391,
-    "rank_score": null,
-    "label": null
-  },
-  {
-    "id": 81,
-    "brand": {
-      "id": 14,
-      "name": "Honda"
-    },
-    "model": "Pilot",
-    "price": 4473,
-    "rank_score": null,
-    "label": null
-  },
-  {
-    "id": 182,
-    "brand": {
-      "id": 40,
-      "name": "Volvo"
-    },
-    "model": "265",
-    "price": 5208,
-    "rank_score": null,
-    "label": null
-  },
-  {
-    "id": 54,
-    "brand": {
-      "id": 10,
-      "name": "Dodge"
-    },
-    "model": "Ramcharger",
-    "price": 5425,
-    "rank_score": null,
-    "label": null
-  },
-  {
-    "id": 108,
-    "brand": {
-      "id": 23,
-      "name": "Maserati"
-    },
-    "model": "Coupe",
-    "price": 5508,
-    "rank_score": null,
-    "label": null
-  },
-  {
-    "id": 86,
-    "brand": {
-      "id": 16,
-      "name": "Infiniti"
-    },
-    "model": "M37",
-    "price": 5698,
     "rank_score": null,
     "label": null
   }
